@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/followups")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class FollowUpController {
 
     @Autowired

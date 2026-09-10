@@ -54,14 +54,38 @@ public class SecurityConfig {
     @org.springframework.beans.factory.annotation.Value("${careflow.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private String allowedOrigins;
 
+    @org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:}")
+    private String frontendUrl;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
-        configuration.setAllowedOrigins(origins);
+        List<String> patterns = new java.util.ArrayList<>();
+
+        // Support local development ports
+        patterns.add("http://localhost:[*]");
+        patterns.add("http://127.0.0.1:[*]");
+        patterns.add("https://*.netlify.app");
+
+        if (frontendUrl != null && !frontendUrl.trim().isEmpty()) {
+            for (String f : frontendUrl.split(",")) {
+                String trimmed = f.trim();
+                if (!trimmed.isEmpty()) {
+                    patterns.add(trimmed);
+                }
+            }
+        }
+
+        if (allowedOrigins != null && !allowedOrigins.trim().isEmpty()) {
+            for (String a : allowedOrigins.split(",")) {
+                String trimmed = a.trim();
+                if (!trimmed.isEmpty() && !patterns.contains(trimmed)) {
+                    patterns.add(trimmed);
+                }
+            }
+        }
+
+        configuration.setAllowedOriginPatterns(patterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setAllowCredentials(true);

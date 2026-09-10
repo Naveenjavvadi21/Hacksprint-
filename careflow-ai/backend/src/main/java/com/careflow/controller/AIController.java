@@ -10,7 +10,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class AIController {
 
     @Autowired

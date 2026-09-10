@@ -1,8 +1,30 @@
-# Ignore H2 database files
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Build output
+dist/
+**/dist/
+
+# Java target
+target/
+**/target/
+
+# H2 Database
 *.mv.db
 *.trace.db
 careflow-ai/backend/data/
 data/
+
+# Netlify
+.netlify/
 
 # Logs
 *.log

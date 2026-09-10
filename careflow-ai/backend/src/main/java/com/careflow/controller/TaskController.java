@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class TaskController {
 
     @Autowired
