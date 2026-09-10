@@ -1,0 +1,10 @@
+[build]
+  base = "careflow-ai/frontend"
+  publish = "dist"
+  command = "npm run build"
+
+# SPA redirect rule to support React Router client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
