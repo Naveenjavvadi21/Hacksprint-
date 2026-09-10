@@ -1,0 +1,152 @@
+package com.careflow.config;
+
+import com.careflow.entity.*;
+import com.careflow.entity.enums.*;
+import com.careflow.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+
+@Component
+public class DataInitializer implements CommandLineRunner {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private DocumentRepository documentRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
+    private FollowUpRepository followUpRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public void run(String... args) throws Exception {
+        seedUsers();
+        seedPatientsAndRelatedData();
+    }
+
+    private void seedUsers() {
+        if (userRepository.count() == 0) {
+            String defaultPassword = passwordEncoder.encode("password123");
+
+            userRepository.save(new User("Dr. Rao", "doctor@careflow.ai", defaultPassword, Role.DOCTOR));
+            userRepository.save(new User("Nurse Sarah", "nurse@careflow.ai", defaultPassword, Role.NURSE));
+            userRepository.save(new User("System Admin", "admin@careflow.ai", defaultPassword, Role.ADMIN));
+            userRepository.save(new User("Care Coordinator", "coordinator@careflow.ai", defaultPassword, Role.COORDINATOR));
+            userRepository.save(new User("Staff Member", "staff@careflow.ai", defaultPassword, Role.STAFF));
+        }
+    }
+
+    private void seedPatientsAndRelatedData() {
+        if (patientRepository.count() == 0) {
+            // Patient 1: Ravi Kumar (Primary Hero Demo Patient)
+            Patient ravi = patientRepository.save(new Patient(
+                    "P-1001", "Ravi Kumar", 35, "Male", "+91 98765 43210", "Dr. Rao", WorkflowStatus.ACTIVE
+            ));
+
+            // Patient 2: Sarah Williams
+            Patient sarah = patientRepository.save(new Patient(
+                    "P-1002", "Sarah Williams", 42, "Female", "+1 555 0192", "Dr. Rao", WorkflowStatus.ACTIVE
+            ));
+
+            // Patient 3: Robert Brown
+            Patient robert = patientRepository.save(new Patient(
+                    "P-1003", "Robert Brown", 58, "Male", "+1 555 0148", "Dr. Patel", WorkflowStatus.ACTIVE
+            ));
+
+            // Patient 4: Anita Sharma
+            Patient anita = patientRepository.save(new Patient(
+                    "P-1004", "Anita Sharma", 29, "Female", "+91 98123 45678", "Dr. Rao", WorkflowStatus.ACTIVE
+            ));
+
+            // Patient 5: David Johnson
+            Patient david = patientRepository.save(new Patient(
+                    "P-1005", "David Johnson", 64, "Male", "+1 555 0177", "Dr. Patel", WorkflowStatus.DISCHARGED
+            ));
+
+            // Seed Documents
+            Document docRavi = documentRepository.save(new Document(
+                    ravi.getId(),
+                    "doctor_note_ravi.txt",
+                    DocumentType.DOCTOR_NOTE,
+                    "Patient Ravi requires CBC testing. Lab report should be reviewed after 2 days. Schedule follow-up consultation after 7 days.",
+                    "Dr. Rao"
+            ));
+
+            Document docSarah = documentRepository.save(new Document(
+                    sarah.getId(),
+                    "lab_report_sarah.pdf",
+                    DocumentType.LAB_REPORT,
+                    "Routine Lipid Panel & HbA1c normal. Recommend dietary follow-up in 30 days.",
+                    "Lab Team"
+            ));
+
+            Document docRobert = documentRepository.save(new Document(
+                    robert.getId(),
+                    "discharge_summary_robert.txt",
+                    DocumentType.DISCHARGE_SUMMARY,
+                    "Post-cardiac catheterization. BP monitoring required twice daily. Follow-up ECG scheduled in 10 days.",
+                    "Dr. Patel"
+            ));
+
+            // Seed Tasks
+            taskRepository.save(new Task(
+                    ravi.getId(), null, "CBC Test",
+                    "Perform Complete Blood Count (CBC) laboratory test.",
+                    "Laboratory", "Lab Team", Priority.NORMAL, TaskStatus.PENDING, LocalDate.now()
+            ));
+
+            taskRepository.save(new Task(
+                    ravi.getId(), null, "Review CBC Report",
+                    "Evaluate CBC lab results and update clinical notes.",
+                    "Doctor", "Dr. Rao", Priority.HIGH, TaskStatus.PENDING, LocalDate.now().plusDays(2)
+            ));
+
+            taskRepository.save(new Task(
+                    ravi.getId(), null, "Schedule Follow-up Consultation",
+                    "Book 15-minute consultation appointment in 7 days.",
+                    "Scheduling", "Reception Team", Priority.NORMAL, TaskStatus.PENDING, LocalDate.now().plusDays(7)
+            ));
+
+            taskRepository.save(new Task(
+                    sarah.getId(), null, "Dietary Consultation Follow-up",
+                    "Discuss HbA1c & lipid results dietary modifications.",
+                    "Nutrition", "Dietitian Staff", Priority.LOW, TaskStatus.IN_PROGRESS, LocalDate.now().plusDays(5)
+            ));
+
+            taskRepository.save(new Task(
+                    robert.getId(), null, "Post-op Cardiac Vitals Check",
+                    "Daily blood pressure and telemetry monitoring post-discharge.",
+                    "Nursing", "Nurse Sarah", Priority.URGENT, TaskStatus.COMPLETED, LocalDate.now()
+            ));
+
+            // Seed Follow-ups
+            followUpRepository.save(new FollowUp(
+                    ravi.getId(), "Dr. Rao", "Follow-up Consultation",
+                    LocalDate.now().plusDays(7), FollowUpStatus.UPCOMING, "Review CBC results and clinical progress."
+            ));
+
+            followUpRepository.save(new FollowUp(
+                    sarah.getId(), "Dr. Rao", "Routine Check-up",
+                    LocalDate.now(), FollowUpStatus.DUE_TODAY, "Review lipid panel and nutrition plan."
+            ));
+
+            followUpRepository.save(new FollowUp(
+                    robert.getId(), "Dr. Patel", "Post-Op ECG Scan",
+                    LocalDate.now().plusDays(10), FollowUpStatus.UPCOMING, "Outpatient electrocardiogram scan."
+            ));
+        }
+    }
+}
