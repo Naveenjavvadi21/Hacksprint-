@@ -50,15 +50,27 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedUsers() {
-        if (userRepository.count() == 0) {
-            String defaultPassword = passwordEncoder.encode("password123");
-
-            userRepository.save(new User("Dr. Rao", "doctor@careflow.ai", defaultPassword, Role.DOCTOR));
-            userRepository.save(new User("Nurse Sarah", "nurse@careflow.ai", defaultPassword, Role.NURSE));
-            userRepository.save(new User("System Admin", "admin@careflow.ai", defaultPassword, Role.ADMIN));
-            userRepository.save(new User("Care Coordinator", "coordinator@careflow.ai", defaultPassword, Role.COORDINATOR));
-            userRepository.save(new User("Staff Member", "staff@careflow.ai", defaultPassword, Role.STAFF));
+        String initialPassword = System.getenv("CAREFLOW_INITIAL_PASSWORD");
+        if (initialPassword == null || initialPassword.isBlank()) {
+            throw new IllegalStateException("CAREFLOW_INITIAL_PASSWORD must be configured");
         }
+        String defaultPassword = passwordEncoder.encode(initialPassword);
+
+        upsertUser("Doctor", "doctor@careflow.ai", defaultPassword, Role.DOCTOR);
+        upsertUser("Nurse", "nurse@careflow.ai", defaultPassword, Role.NURSE);
+        upsertUser("Admin", "admin@careflow.ai", defaultPassword, Role.ADMIN);
+
+        userRepository.findByEmailIgnoreCase("coordinator@careflow.ai").ifPresent(userRepository::delete);
+        userRepository.findByEmailIgnoreCase("staff@careflow.ai").ifPresent(userRepository::delete);
+    }
+
+    private void upsertUser(String name, String email, String encodedPassword, Role role) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseGet(() -> new User(name, email, encodedPassword, role));
+        user.setName(name);
+        user.setPassword(encodedPassword);
+        user.setRole(role);
+        userRepository.save(user);
     }
 
     private void seedPatientsAndRelatedData() {
