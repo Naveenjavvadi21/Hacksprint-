@@ -102,4 +102,23 @@ public class PatientDto {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    private Long pendingTasksCount;
+    private String nextFollowUp;
+
+    public Long getPendingTasksCount() {
+        return pendingTasksCount;
+    }
+
+    public void setPendingTasksCount(Long pendingTasksCount) {
+        this.pendingTasksCount = pendingTasksCount;
+    }
+
+    public String getNextFollowUp() {
+        return nextFollowUp;
+    }
+
+    public void setNextFollowUp(String nextFollowUp) {
+        this.nextFollowUp = nextFollowUp;
+    }
 }

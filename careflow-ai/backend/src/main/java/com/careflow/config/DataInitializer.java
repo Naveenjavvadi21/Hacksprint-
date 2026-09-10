@@ -35,6 +35,18 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         seedUsers();
         seedPatientsAndRelatedData();
+        ensureNurseTasks();
+    }
+
+    private void ensureNurseTasks() {
+        taskRepository.findById(1L).ifPresent(t -> {
+            if ("Lab Team".equals(t.getAssignedTo()) || "Laboratory".equals(t.getDepartment())) {
+                t.setAssignedTo("Nurse Sarah");
+                t.setDepartment("Nursing");
+                t.setDescription("Collect blood sample and coordinate Complete Blood Count (CBC) test.");
+                taskRepository.save(t);
+            }
+        });
     }
 
     private void seedUsers() {
@@ -104,8 +116,8 @@ public class DataInitializer implements CommandLineRunner {
             // Seed Tasks
             taskRepository.save(new Task(
                     ravi.getId(), null, "CBC Test",
-                    "Perform Complete Blood Count (CBC) laboratory test.",
-                    "Laboratory", "Lab Team", Priority.NORMAL, TaskStatus.PENDING, LocalDate.now()
+                    "Collect blood sample and coordinate Complete Blood Count (CBC) test.",
+                    "Nursing", "Nurse Sarah", Priority.HIGH, TaskStatus.PENDING, LocalDate.now()
             ));
 
             taskRepository.save(new Task(

@@ -19,8 +19,8 @@ public class DashboardController {
 
     @GetMapping
     public ResponseEntity<DashboardDto> getDashboardMetrics(
-            @RequestParam(required = false) String role,
-            @RequestParam(required = false) String user
+            @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "user", required = false) String user
     ) {
         // If explicit role is requested (e.g. from role switch in UI)
         if (role != null && !role.trim().isEmpty()) {
@@ -50,12 +50,12 @@ public class DashboardController {
     }
 
     @GetMapping("/doctor")
-    public ResponseEntity<DashboardDto> getDoctorDashboard(@RequestParam(required = false, defaultValue = "Dr. Rao") String doctor) {
+    public ResponseEntity<DashboardDto> getDoctorDashboard(@RequestParam(value = "doctor", required = false, defaultValue = "Dr. Rao") String doctor) {
         return ResponseEntity.ok(dashboardService.getDashboardForRole(doctor, "DOCTOR"));
     }
 
     @GetMapping("/nurse")
-    public ResponseEntity<DashboardDto> getNurseDashboard(@RequestParam(required = false, defaultValue = "Nurse Sarah") String nurse) {
+    public ResponseEntity<DashboardDto> getNurseDashboard(@RequestParam(value = "nurse", required = false, defaultValue = "Nurse Sarah") String nurse) {
         return ResponseEntity.ok(dashboardService.getDashboardForRole(nurse, "NURSE"));
     }
 }

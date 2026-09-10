@@ -24,7 +24,7 @@ public class FollowUpController {
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<FollowUpDto>> getFollowUpsByPatient(@PathVariable Long patientId) {
+    public ResponseEntity<List<FollowUpDto>> getFollowUpsByPatient(@PathVariable("patientId") Long patientId) {
         return ResponseEntity.ok(followUpService.getFollowUpsByPatient(patientId));
     }
 
@@ -35,7 +35,7 @@ public class FollowUpController {
 
     @PutMapping("/{id}/status")
     public ResponseEntity<FollowUpDto> updateFollowUpStatus(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, String> payload) {
         String statusStr = payload.get("status");
         if (statusStr == null || statusStr.trim().isEmpty()) {

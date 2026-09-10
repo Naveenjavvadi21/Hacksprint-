@@ -24,24 +24,24 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PatientDto> getPatientById(@PathVariable Long id) {
+    public ResponseEntity<PatientDto> getPatientById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(patientService.getPatientById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR', 'COORDINATOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR')")
     public ResponseEntity<PatientDto> createPatient(@RequestBody PatientDto patientDto) {
         return ResponseEntity.ok(patientService.createPatient(patientDto));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR', 'COORDINATOR', 'NURSE')")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable Long id, @RequestBody PatientDto patientDto) {
+    public ResponseEntity<PatientDto> updatePatient(@PathVariable("id") Long id, @RequestBody PatientDto patientDto) {
         return ResponseEntity.ok(patientService.updatePatient(id, patientDto));
     }
 
     @GetMapping("/{id}/timeline")
-    public ResponseEntity<List<TimelineEventDto>> getPatientTimeline(@PathVariable Long id) {
+    public ResponseEntity<List<TimelineEventDto>> getPatientTimeline(@PathVariable("id") Long id) {
         return ResponseEntity.ok(patientService.getPatientTimeline(id));
     }
 }

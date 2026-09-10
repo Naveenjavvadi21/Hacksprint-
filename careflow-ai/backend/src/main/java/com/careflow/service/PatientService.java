@@ -136,6 +136,28 @@ public class PatientService {
                     task.getCreatedAt() != null ? task.getCreatedAt() : LocalDateTime.now().minusDays(1)
             ));
 
+            if (task.getAssignedTo() != null && !task.getAssignedTo().isBlank()) {
+                events.add(new TimelineEventDto(
+                        "task-assign-" + task.getId(),
+                        "TASK_ASSIGNED",
+                        "Task Assigned: " + task.getTitle(),
+                        "Assigned to " + task.getAssignedTo() + " (" + task.getDepartment() + ").",
+                        "Care Coordination",
+                        task.getCreatedAt() != null ? task.getCreatedAt().plusMinutes(15) : LocalDateTime.now().minusHours(12)
+                ));
+            }
+
+            if (task.getStatus() == com.careflow.entity.enums.TaskStatus.IN_PROGRESS || task.getStatus() == com.careflow.entity.enums.TaskStatus.COMPLETED) {
+                events.add(new TimelineEventDto(
+                        "task-prog-" + task.getId(),
+                        "TASK_IN_PROGRESS",
+                        "Task In Progress: " + task.getTitle(),
+                        "Task actively in progress under " + task.getAssignedTo() + ".",
+                        task.getAssignedTo() != null ? task.getAssignedTo() : "Nursing Staff",
+                        task.getCreatedAt() != null ? task.getCreatedAt().plusHours(2) : LocalDateTime.now().minusHours(2)
+                ));
+            }
+
             if (task.getStatus() == com.careflow.entity.enums.TaskStatus.COMPLETED) {
                 events.add(new TimelineEventDto(
                         "task-comp-" + task.getId(),

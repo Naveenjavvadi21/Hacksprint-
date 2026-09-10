@@ -17,13 +17,13 @@ public class AIController {
     private AIServiceHandler aiServiceHandler;
 
     @PostMapping("/analyze/{documentId}")
-    public ResponseEntity<AIAnalysisDto> analyzeDocument(@PathVariable Long documentId) {
+    public ResponseEntity<AIAnalysisDto> analyzeDocument(@PathVariable("documentId") Long documentId) {
         AIAnalysisDto analysis = aiServiceHandler.analyzeDocument(documentId);
         return ResponseEntity.ok(analysis);
     }
 
     @GetMapping("/document/{documentId}")
-    public ResponseEntity<AIAnalysisDto> getAnalysisByDocumentId(@PathVariable Long documentId) {
+    public ResponseEntity<AIAnalysisDto> getAnalysisByDocumentId(@PathVariable("documentId") Long documentId) {
         AIAnalysisDto analysis = aiServiceHandler.getAnalysisByDocumentId(documentId);
         return ResponseEntity.ok(analysis);
     }

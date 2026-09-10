@@ -25,7 +25,7 @@ public class DocumentController {
 
     @PostMapping("/upload/{patientId}")
     public ResponseEntity<DocumentDto> uploadDocument(
-            @PathVariable Long patientId,
+            @PathVariable("patientId") Long patientId,
             @RequestBody Map<String, String> payload) {
 
         String fileName = payload.getOrDefault("fileName", "Doctor_Note.txt");
@@ -43,12 +43,12 @@ public class DocumentController {
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<DocumentDto>> getDocumentsByPatient(@PathVariable Long patientId) {
+    public ResponseEntity<List<DocumentDto>> getDocumentsByPatient(@PathVariable("patientId") Long patientId) {
         return ResponseEntity.ok(documentService.getDocumentsByPatient(patientId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DocumentDto> getDocumentById(@PathVariable Long id) {
+    public ResponseEntity<DocumentDto> getDocumentById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(documentService.getDocumentById(id));
     }
 }

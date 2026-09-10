@@ -25,7 +25,7 @@ public class TaskController {
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<TaskDto>> getTasksByPatient(@PathVariable Long patientId) {
+    public ResponseEntity<List<TaskDto>> getTasksByPatient(@PathVariable("patientId") Long patientId) {
         return ResponseEntity.ok(taskService.getTasksByPatient(patientId));
     }
 
@@ -59,7 +59,7 @@ public class TaskController {
 
     @PutMapping("/{id}/status")
     public ResponseEntity<TaskDto> updateTaskStatus(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, String> payload) {
         String statusStr = payload.get("status");
         if (statusStr == null || statusStr.trim().isEmpty()) {
@@ -77,7 +77,7 @@ public class TaskController {
 
     @PutMapping("/{id}/assign")
     public ResponseEntity<TaskDto> updateTaskAssignee(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, String> payload) {
         TaskDto updated = taskService.updateTaskAssignee(id, payload);
         return ResponseEntity.ok(updated);

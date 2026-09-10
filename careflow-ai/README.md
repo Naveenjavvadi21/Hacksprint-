@@ -19,30 +19,24 @@
 
 ## 🚀 How to Run
 
-### 1. Start PostgreSQL
-Ensure PostgreSQL is running on `localhost:5432` with the `careflow_ai` database created.
-
-```sql
-CREATE DATABASE careflow_ai;
-```
-
-### 2. Start the Backend
+### 1. Start the Backend
+The backend runs out-of-the-box with a persistent embedded database (PostgreSQL-compatible syntax, saved to `./data/careflow_ai`). If you wish to use an external PostgreSQL instance, set `DATABASE_URL` in your environment.
 
 ```cmd
 cd backend
-C:\...\maven\apache-maven-3.9.6\bin\mvn.cmd clean package -DskipTests
 java -jar target\careflow-backend-0.0.1-SNAPSHOT.jar
 ```
+*(Or simply double-click `run_backend.bat`)*
 
 Backend starts on **http://localhost:8080**
 
-### 3. Start the Frontend
+### 2. Start the Frontend
 
 ```cmd
 cd frontend
-npm install
 npm run dev
 ```
+*(Or simply double-click `run_frontend.bat`)*
 
 Frontend runs on **http://localhost:5173**
 

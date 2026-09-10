@@ -1,35 +1,50 @@
 server:
-  port: 8080
+  port: 9090
 
 spring:
   application:
     name: careflow-backend
+
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/careflow_ai}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:root123}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
+
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
 
 careflow:
   jwt:
     secret: ${JWT_SECRET:CareFlowAISecretKeyForJWTSigningMustBeAtLeast32BytesLong123456!}
     expirationMs: 86400000
+
   ai:
     groq:
-      api-key: ${GROQ_API_KEY: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}
+      api-key: ${GROQ_API_KEY:}
       model: ${GROQ_MODEL:qwen/qwen3.8-27b}
       url: https://api.groq.com/openai/v1/chat/completions
 
 springdoc:
   api-docs:
     path: /api-docs
+
   swagger-ui:
     path: /swagger-ui.html

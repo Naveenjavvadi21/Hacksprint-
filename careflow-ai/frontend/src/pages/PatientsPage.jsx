@@ -97,7 +97,7 @@ export const PatientsPage = () => {
           </p>
         </div>
 
-        {hasRole('ADMIN', 'DOCTOR', 'COORDINATOR') && (
+        {hasRole('ADMIN', 'COORDINATOR') && (
           <button
             onClick={() => setShowModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs rounded-xl shadow-sm transition-all"

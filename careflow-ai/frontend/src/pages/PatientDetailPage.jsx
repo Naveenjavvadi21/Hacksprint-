@@ -20,9 +20,11 @@ import {
 import { patientApi, documentApi, aiApi, taskApi, followUpApi } from '../services/api';
 import { TaskStatusBadge, FollowUpStatusBadge, PriorityBadge, WorkflowStatusBadge } from '../components/StatusBadge';
 import { AIBadge, AISafetyDisclaimer } from '../components/AIBadge';
+import { useAuth } from '../context/AuthContext';
 
 export const PatientDetailPage = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [patient, setPatient] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [documents, setDocuments] = useState([]);
@@ -57,6 +59,14 @@ export const PatientDetailPage = () => {
       setTasks(tRes.data);
       setFollowUps(fRes.data);
       setTimeline(tmRes.data);
+
+      // Preload AI summary for the first processed document if available
+      const processed = dRes.data.find(d => d.aiProcessed);
+      if (processed) {
+        aiApi.getAnalysis(processed.id)
+          .then(res => setAiAnalysisResult(res.data))
+          .catch(() => {});
+      }
     } catch (err) {
       console.error('Failed to load patient detail data:', err);
     } finally {
@@ -132,6 +142,15 @@ export const PatientDetailPage = () => {
       loadAllData();
     } catch (err) {
       alert('Failed to update task status.');
+    }
+  };
+
+  const handleFollowUpStatusChange = async (followUpId, newStatus) => {
+    try {
+      await followUpApi.updateStatus(followUpId, newStatus);
+      loadAllData();
+    } catch (err) {
+      alert('Failed to update follow-up status.');
     }
   };
 
@@ -282,15 +301,28 @@ export const PatientDetailPage = () => {
               documents.map((doc) => (
                 <div key={doc.id} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <FileText className="w-4 h-4 text-sky-600" />
                       <span className="font-semibold text-slate-900 text-sm">{doc.fileName}</span>
                       <span className="text-[11px] font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
                         {doc.documentType}
                       </span>
-                      {doc.aiProcessed && <AIBadge text="AI Processed" size="small" />}
+                      {doc.aiProcessed ? (
+                        <AIBadge text="AI Processed" size="small" />
+                      ) : (
+                        <span className="text-[11px] font-medium px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded">
+                          Pending AI Analysis
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">{doc.content}</p>
+                    <div className="text-[11px] text-slate-500 flex items-center gap-3 pt-1">
+                      <span>Patient: <strong className="text-slate-700">{patient.name}</strong></span>
+                      <span>•</span>
+                      <span>Uploaded By: <strong className="text-slate-700">{doc.uploadedBy || 'Medical Staff'}</strong></span>
+                      <span>•</span>
+                      <span>Date: <strong className="text-slate-700 font-mono">{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'Recent'}</strong></span>
+                    </div>
                   </div>
 
                   {doc.aiProcessed ? (
@@ -373,13 +405,19 @@ export const PatientDetailPage = () => {
                     <p className="text-xs text-slate-500">Actions extracted from document analysis ready to save to PostgreSQL</p>
                   </div>
 
-                  <button
-                    onClick={handleCreateTasksFromAI}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                    <span>[ Create Tasks in DB ]</span>
-                  </button>
+                  {user?.role === 'NURSE' ? (
+                    <span className="text-xs font-semibold px-3 py-1.5 bg-purple-100 text-purple-800 rounded-xl border border-purple-200">
+                      ✨ Nurse Care Coordination View
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleCreateTasksFromAI}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                    >
+                      <CheckSquare className="w-4 h-4" />
+                      <span>[ Create Tasks in DB ]</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -409,7 +447,13 @@ export const PatientDetailPage = () => {
       {activeTab === 'tasks' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-base">Patient Tasks</h3>
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">Patient Tasks</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Assigned workflow procedures for {patient.name} (persists to database)</p>
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 bg-sky-50 text-sky-700 rounded-full border border-sky-200">
+              {tasks.length} Total Tasks
+            </span>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -424,22 +468,52 @@ export const PatientDetailPage = () => {
                       <PriorityBadge priority={task.priority} />
                     </div>
                     <p className="text-xs text-slate-500">{task.description}</p>
-                    <div className="text-[11px] text-slate-500 flex items-center gap-3">
+                    <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-3 pt-0.5">
+                      <span>Patient: <strong className="text-slate-700">{patient.name}</strong></span>
+                      <span>•</span>
                       <span>Department: <strong className="text-slate-700">{task.department}</strong></span>
+                      <span>•</span>
                       <span>Assigned: <strong className="text-slate-700">{task.assignedTo}</strong></span>
-                      <span>Due: <strong className="text-slate-700 font-mono">{task.dueDate}</strong></span>
+                      <span>•</span>
+                      <span>Due Date: <strong className="text-slate-700 font-mono">{task.dueDate || 'Today'}</strong></span>
                     </div>
                   </div>
 
-                  <select
-                    value={task.status}
-                    onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
-                    className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
-                  </select>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {task.status === 'PENDING' && (
+                      <button
+                        onClick={() => handleTaskStatusChange(task.id, 'IN_PROGRESS')}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                        title="Click to start task"
+                      >
+                        <span>▶ Start Task</span>
+                      </button>
+                    )}
+                    {task.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={() => handleTaskStatusChange(task.id, 'COMPLETED')}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                        title="Click to complete task"
+                      >
+                        <span>✓ Complete Task</span>
+                      </button>
+                    )}
+                    {task.status === 'COMPLETED' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs rounded-xl">
+                        ✓ Completed
+                      </span>
+                    )}
+
+                    <select
+                      value={task.status}
+                      onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
+                      className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="COMPLETED">Completed</option>
+                    </select>
+                  </div>
                 </div>
               ))
             )}
@@ -449,21 +523,50 @@ export const PatientDetailPage = () => {
 
       {/* TAB CONTENT: Follow-ups */}
       {activeTab === 'follow-ups' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-          <h3 className="font-bold text-slate-900 text-base">Scheduled Follow-ups</h3>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">Scheduled Follow-ups</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Post-consultation and review follow-ups for {patient.name}</p>
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 bg-rose-50 text-rose-700 rounded-full border border-rose-200">
+              {followUps.length} Scheduled
+            </span>
+          </div>
+
           <div className="space-y-3">
-            {followUps.map((f) => (
-              <div key={f.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-900 text-sm">{f.type}</span>
-                    <FollowUpStatusBadge status={f.status} />
+            {followUps.length === 0 ? (
+              <p className="text-xs text-slate-400 py-6 text-center">No follow-ups scheduled for this patient.</p>
+            ) : (
+              followUps.map((f) => (
+                <div key={f.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 text-sm">{f.type}</span>
+                      <FollowUpStatusBadge status={f.status} />
+                    </div>
+                    <div className="text-xs text-slate-600 flex flex-wrap items-center gap-2 mt-1">
+                      <span>Patient: <strong className="text-slate-800">{patient.name}</strong></span>
+                      <span>•</span>
+                      <span>Doctor: <strong className="text-slate-800">{f.doctor}</strong></span>
+                      <span>•</span>
+                      <span>Scheduled Date: <strong className="text-slate-800 font-mono">{f.scheduledDate}</strong></span>
+                    </div>
+                    {f.notes && <p className="text-xs text-slate-500 italic mt-1">"{f.notes}"</p>}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Doctor: {f.doctor} | Date: {f.scheduledDate}</p>
-                  {f.notes && <p className="text-xs text-slate-600 mt-1 italic">"{f.notes}"</p>}
+
+                  <select
+                    value={f.status}
+                    onChange={(e) => handleFollowUpStatusChange(f.id, e.target.value)}
+                    className="text-xs font-semibold bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer self-start sm:self-auto"
+                  >
+                    <option value="UPCOMING">Upcoming</option>
+                    <option value="DUE_TODAY">Due Today</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
@@ -483,6 +586,8 @@ export const PatientDetailPage = () => {
                 <div className={`absolute -left-2.5 top-0 w-5 h-5 rounded-full border-2 bg-white flex items-center justify-center ${
                   event.type === 'AI_ANALYSIS' ? 'border-purple-600 bg-purple-50' :
                   event.type === 'TASK_COMPLETED' ? 'border-emerald-600 bg-emerald-50' :
+                  event.type === 'TASK_IN_PROGRESS' ? 'border-amber-600 bg-amber-50' :
+                  event.type === 'TASK_ASSIGNED' ? 'border-blue-600 bg-blue-50' :
                   'border-sky-600 bg-sky-50'
                 }`}>
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
