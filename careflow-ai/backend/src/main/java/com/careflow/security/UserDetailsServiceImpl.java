@@ -17,9 +17,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with email: " + email));
+    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+        String trimmed = identifier != null ? identifier.trim() : "";
+        User user = userRepository.findByEmailIgnoreCase(trimmed)
+                .or(() -> userRepository.findByNameIgnoreCase(trimmed))
+                .or(() -> userRepository.findByEmailIgnoreCase(trimmed + "@careflow.ai"))
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with identifier: " + identifier));
 
         return UserDetailsImpl.build(user);
     }

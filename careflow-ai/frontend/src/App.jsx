@@ -18,7 +18,7 @@ import { TasksPage } from './pages/TasksPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { FollowUpsPage } from './pages/FollowUpsPage';
 
-const ProtectedLayout = ({ children }) => {
+const ProtectedLayout = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -31,6 +31,21 @@ const ProtectedLayout = ({ children }) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Enforce Role-Based Access Control (RBAC)
+  if (allowedRoles && allowedRoles.length > 0) {
+    const role = user.role;
+    const isAuthorized = allowedRoles.includes(role) ||
+      (allowedRoles.includes('NURSE') && role === 'STAFF') ||
+      (allowedRoles.includes('DOCTOR') && role === 'COORDINATOR');
+
+    if (!isAuthorized) {
+      if (role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
+      if (role === 'DOCTOR') return <Navigate to="/doctor/dashboard" replace />;
+      if (role === 'NURSE' || role === 'STAFF') return <Navigate to="/nurse/dashboard" replace />;
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return (
@@ -61,21 +76,21 @@ export default function App() {
             }
           />
 
-          {/* Dedicated Admin Dashboard */}
+          {/* Dedicated Admin Dashboard (Admin Only) */}
           <Route
             path="/admin/dashboard"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['ADMIN']}>
                 <AdminDashboardPage />
               </ProtectedLayout>
             }
           />
 
-          {/* Admin Sub-pages */}
+          {/* Admin Sub-pages (Admin Only) */}
           <Route
             path="/admin/staff"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['ADMIN']}>
                 <AdminStaffPage />
               </ProtectedLayout>
             }
@@ -84,7 +99,7 @@ export default function App() {
           <Route
             path="/admin/ai-activity"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['ADMIN']}>
                 <AdminAIActivityPage />
               </ProtectedLayout>
             }
@@ -93,27 +108,27 @@ export default function App() {
           <Route
             path="/admin/settings"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['ADMIN']}>
                 <AdminSettingsPage />
               </ProtectedLayout>
             }
           />
 
-          {/* Dedicated Doctor Dashboard */}
+          {/* Dedicated Doctor Dashboard (Doctor Only) */}
           <Route
             path="/doctor/dashboard"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['DOCTOR']}>
                 <DoctorDashboardPage />
               </ProtectedLayout>
             }
           />
 
-          {/* Dedicated Nurse Dashboard */}
+          {/* Dedicated Nurse Dashboard (Nurse/Staff Only) */}
           <Route
             path="/nurse/dashboard"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['NURSE', 'STAFF']}>
                 <NurseDashboardPage />
               </ProtectedLayout>
             }
@@ -141,7 +156,7 @@ export default function App() {
           <Route
             path="/ai-assistant"
             element={
-              <ProtectedLayout>
+              <ProtectedLayout allowedRoles={['DOCTOR', 'ADMIN']}>
                 <AIAssistantPage />
               </ProtectedLayout>
             }
