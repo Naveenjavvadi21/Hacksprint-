@@ -26,6 +26,9 @@ public class TaskService {
     @Autowired
     private PatientRepository patientRepository;
 
+    @Autowired
+    private com.careflow.notification.service.NotificationService notificationService;
+
     public List<TaskDto> getAllTasks() {
         return taskRepository.findAll().stream()
                 .map(task -> {
@@ -68,6 +71,13 @@ public class TaskService {
         );
 
         Task saved = taskRepository.save(task);
+
+        try {
+            notificationService.notifyTaskAssigned(saved);
+        } catch (Exception e) {
+            // Task creation succeeds regardless of email failure
+        }
+
         return new TaskDto(saved, patient.getName());
     }
 
@@ -104,6 +114,13 @@ public class TaskService {
                     due
             );
             Task saved = taskRepository.save(task);
+
+            try {
+                notificationService.notifyTaskAssigned(saved);
+            } catch (Exception e) {
+                // Ignore email failure
+            }
+
             createdList.add(new TaskDto(saved, patient.getName()));
         }
 
@@ -135,6 +152,12 @@ public class TaskService {
         }
 
         Task updated = taskRepository.save(task);
+
+        try {
+            notificationService.notifyTaskAssigned(updated);
+        } catch (Exception e) {
+            // Ignore email failure
+        }
 
         String patientName = patientRepository.findById(updated.getPatientId())
                 .map(Patient::getName).orElse("Unknown Patient");

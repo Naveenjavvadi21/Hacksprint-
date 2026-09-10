@@ -28,6 +28,9 @@ public class AuthService {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private com.careflow.notification.service.NotificationService notificationService;
+
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
@@ -54,7 +57,14 @@ public class AuthService {
                 registerRequest.getRole()
         );
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Trigger welcome email after user is successfully saved
+        try {
+            notificationService.notifyUserRegistered(savedUser);
+        } catch (Exception e) {
+            // Email failure must not break registration
+        }
 
         return login(new LoginRequest(registerRequest.getEmail(), registerRequest.getPassword()));
     }
