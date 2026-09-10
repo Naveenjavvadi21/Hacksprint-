@@ -26,11 +26,11 @@ export const AdminSettingsPage = () => {
           <div className="space-y-3 text-xs text-slate-600 font-mono">
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="font-sans font-semibold text-slate-700">Database:</span>
-              <span>PostgreSQL 18 (careflow_ai)</span>
+              <span>H2 Database Engine (Embedded)</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="font-sans font-semibold text-slate-700">Host:</span>
-              <span>localhost:5432</span>
+              <span className="font-sans font-semibold text-slate-700">Storage:</span>
+              <span>./data/careflow_ai (Persistent File)</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="font-sans font-semibold text-slate-700">Connection Pool:</span>

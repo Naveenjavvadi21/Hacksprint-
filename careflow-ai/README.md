@@ -1,191 +1,132 @@
 # CareFlow AI — Full-Stack Healthcare Workflow & Care Coordination Platform
 
-> **AI-Powered MVP/POC for Hackathon Demo**
+> **AI-Powered Healthcare Care Coordination Platform (Production & Cloud Ready)**
 
 ---
 
-## 🏗️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, Vite, Tailwind CSS, Axios, React Router |
-| Backend | Spring Boot 3.2, Spring Security, Spring Data JPA |
-| Database | PostgreSQL 18 (`careflow_ai` database) |
-| Auth | JWT (JJWT), BCrypt password hashing |
-| AI Engine | MockAIService (plug-in real LLM when ready) |
-| API Docs | SpringDoc OpenAPI / Swagger |
-
----
-
-## 🚀 How to Run
-
-### 1. Start the Backend
-The backend runs out-of-the-box with a persistent embedded database (PostgreSQL-compatible syntax, saved to `./data/careflow_ai`). If you wish to use an external PostgreSQL instance, set `DATABASE_URL` in your environment.
-
-```cmd
-cd backend
-java -jar target\careflow-backend-0.0.1-SNAPSHOT.jar
-```
-*(Or simply double-click `run_backend.bat`)*
-
-Backend starts on **http://localhost:8080**
-
-### 2. Start the Frontend
-
-```cmd
-cd frontend
-npm run dev
-```
-*(Or simply double-click `run_frontend.bat`)*
-
-Frontend runs on **http://localhost:5173**
-
----
-
-## 👤 Demo Accounts (All use password: `password123`)
-
-| Role | Email |
-|---|---|
-| Doctor | `doctor@careflow.ai` |
-| Nurse | `nurse@careflow.ai` |
-| Admin | `admin@careflow.ai` |
-| Coordinator | `coordinator@careflow.ai` |
-
----
-
-## 🎯 Judge Hero Demo Workflow
-
-1. Open **http://localhost:5173** and click **Dr. Rao (Doctor)** 1-click login
-2. Navigate to **Patients** → Open **Ravi Kumar (P-1001)**
-3. Switch to **Documents** tab → click **✨ Analyze with AI**
-4. View the **AI Summary** tab — see extracted summary and 3 actions
-5. Click **[ Create Tasks ]** — tasks saved to PostgreSQL
-6. Open **Tasks** page — see CBC Test, Review CBC Report, Schedule Follow-up
-7. Change task statuses: **Pending → In Progress → Completed**
-8. Open **Follow-ups** — see Ravi's scheduled consultation
-9. Return to Patient → **Timeline** tab — full audit trail
-10. Return to **Dashboard** — metrics update in real time
-
----
-
-## 🌐 REST API Endpoints
-
-### Authentication
-```
-POST /api/auth/login      — Login and receive JWT
-POST /api/auth/register   — Register new user
-```
-
-### Patients
-```
-GET    /api/patients          — All patients
-GET    /api/patients/{id}     — Patient by ID
-POST   /api/patients          — Create patient
-PUT    /api/patients/{id}     — Update patient
-GET    /api/patients/{id}/timeline — Patient timeline
-```
-
-### Documents
-```
-POST   /api/documents/upload/{patientId}   — Upload document
-GET    /api/documents/patient/{patientId}  — Patient documents
-GET    /api/documents/{id}                 — Document by ID
-GET    /api/documents                      — All documents
-```
-
-### AI Analysis
-```
-POST   /api/ai/analyze/{documentId}    — Run AI analysis on document
-GET    /api/ai/document/{documentId}   — Get existing analysis
-POST   /api/ai/direct-analyze          — Analyze raw text
-```
-
-### Tasks
-```
-GET    /api/tasks                  — All tasks
-GET    /api/tasks/patient/{id}     — Patient tasks
-POST   /api/tasks                  — Create single task
-POST   /api/tasks/batch-create     — Create batch tasks from AI actions
-PUT    /api/tasks/{id}/status      — Update task status
-PUT    /api/tasks/{id}/assign      — Update task assignee/department
-```
-
-### Follow-Ups
-```
-GET    /api/followups                   — All follow-ups
-GET    /api/followups/patient/{id}      — Patient follow-ups
-POST   /api/followups                   — Schedule follow-up
-PUT    /api/followups/{id}/status       — Update follow-up status
-```
-
-### Dashboard
-```
-GET    /api/dashboard       — Live metrics from PostgreSQL
-```
-
----
-
-## 🤖 AI Architecture
+## 🏗️ Deployment Architecture
 
 ```text
-AIService (interface)
-      ↓
-MockAIService (@Primary)
-   - Parses keywords like CBC, Ravi, discharge, cardiac
-   - Returns structured summary, key info, action list
-   - Each action has: title, department, assignedTo, priority, dueInDays
-
-Future:
-AIService (interface)
-      ↓
-GroqAIService / GeminiAIService / OpenAIService
-   - Replace MockAIService @Primary annotation with real LLM
-   - Add AI_API_KEY environment variable
+[ React 18 + Vite Frontend ] (Vercel / Netlify / Cloud)
+          ↓ (HTTPS REST API Requests with JWT)
+[ Spring Boot 3.2.3 Backend ] (Render / Railway / Cloud)
+    ├── Spring Security + JJWT (Stateless RBAC)
+    ├── Groq AI Clinical Engine (Qwen / Llama 3 via Groq)
+    ├── Local File-Based H2 Database (./data/careflow_ai)
+    └── Swagger / OpenAPI Documentation (/swagger-ui/index.html)
 ```
 
 ---
 
-## 🗄️ Database Schema
+## 🚀 Quick Local Development
 
-```sql
-users          (id, name, email, password, role, created_at)
-patients       (id, patient_code, name, age, gender, phone, doctor, workflow_status, created_at)
-documents      (id, patient_id, file_name, document_type, content, uploaded_by, uploaded_at, ai_processed)
-ai_analyses    (id, document_id, summary, key_information, extracted_actions_json, created_at)
-tasks          (id, patient_id, analysis_id, title, description, department, assigned_to, priority, status, due_date, created_at)
-follow_ups     (id, patient_id, doctor, type, scheduled_date, status, notes, created_at)
+### 1. Backend (Port 9090)
+```powershell
+cd careflow-ai/backend
+.\run_backend.ps1
 ```
+*Or double-click `run_backend.bat`.*  
+The backend will run on **http://localhost:9090**.
+
+### 2. Frontend (Port 5173)
+```bash
+cd careflow-ai/frontend
+npm install
+npm run dev
+```
+The frontend will run on **http://localhost:5173** and proxy `/api` requests to `http://localhost:9090`.
 
 ---
 
-## 🔧 Environment Variables
+## 📦 Production Deployment Guide
 
-| Variable | Default | Description |
+### Option 1: Backend on Render (Web Service) & Frontend on Vercel
+
+#### Step 1: Deploy Backend to Render
+1. Push your project to GitHub.
+2. Log into [Render.com](https://render.com) and click **New +** → **Web Service**.
+3. Connect your GitHub repository.
+4. Set the following configuration:
+   - **Root Directory:** `careflow-ai/backend`
+   - **Environment:** `Docker` (Render will detect `careflow-ai/backend/Dockerfile`)
+   - **Instance Type:** Free or Starter
+5. Under **Environment Variables**, add:
+   - `PORT`: `9090` (or leave Render to assign `$PORT`)
+   - `FRONTEND_URL`: `https://your-frontend-deployment.vercel.app`
+   - `JWT_SECRET`: `your_secure_random_32_character_string_here`
+   - `GROQ_API_KEY`: `your_groq_api_key_here`
+   - `GROQ_MODEL`: `qwen/qwen3.8-27b`
+   - `H2_CONSOLE_ENABLED`: `false`
+6. Click **Deploy Web Service**.
+7. Note down your backend URL (e.g., `https://careflow-backend.onrender.com`).
+8. Test the health check endpoint: `https://careflow-backend.onrender.com/api/health`
+
+> [!WARNING]
+> **H2 Database Ephemeral Disk Note on Free Cloud Platforms**: Free tiers on Render/Railway use ephemeral storage. Any new data created during sessions will be reset if the container is redeployed or put to sleep. If data persistence between cold restarts is needed for judges, attach a persistent disk mount to `/app/data` or use Render's managed database.
+
+---
+
+#### Step 2: Deploy Frontend to Vercel
+1. Log into [Vercel.com](https://vercel.com) and click **Add New** → **Project**.
+2. Select your repository.
+3. Configure the project:
+   - **Framework Preset:** Vite
+   - **Root Directory:** `careflow-ai/frontend`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. Under **Environment Variables**, add:
+   - `VITE_API_URL`: `https://careflow-backend.onrender.com` (Your Render backend URL from Step 1)
+5. Click **Deploy**.
+6. Once deployed, copy your production Vercel URL (e.g., `https://careflow-frontend.vercel.app`).
+7. Update the `FRONTEND_URL` on Render with this URL so CORS allows requests.
+
+---
+
+## 🔑 Environment Variables Reference
+
+### Backend (`careflow-ai/backend/.env.example`)
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `PORT` | Yes | `9090` | Server listening port |
+| `FRONTEND_URL` | Yes | `http://localhost:5173` | Allowed frontend origins for CORS (comma-separated) |
+| `JWT_SECRET` | Yes | Default fallback | Secret key for signing JWTs (min 32 bytes) |
+| `GROQ_API_KEY` | Optional | Empty | Groq API Key for clinical note extraction |
+| `GROQ_MODEL` | Optional | `qwen/qwen3.8-27b` | Model used for document analysis |
+| `H2_CONSOLE_ENABLED` | Optional | `false` | Enable/disable H2 console in production |
+| `H2_DB_PATH` | Optional | `./data/careflow_ai` | File storage path for H2 database |
+
+### Frontend (`careflow-ai/frontend/.env.example`)
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `VITE_API_URL` | In Production | Empty (uses `/api`) | Public HTTPS backend URL (e.g. `https://api.careflow.com`) |
+
+---
+
+## 🏥 Demo User Credentials
+
+All accounts are pre-seeded on startup with password: **`password123`**
+
+| Role | Email | Capabilities |
 |---|---|---|
-| `DATABASE_URL` | `jdbc:postgresql://localhost:5432/careflow_ai` | PostgreSQL connection URL |
-| `DATABASE_USERNAME` | `postgres` | DB username |
-| `DATABASE_PASSWORD` | `root123` | DB password |
-| `JWT_SECRET` | Bundled default | JWT signing key (change for production!) |
-| `AI_API_KEY` | None required | Future LLM integration key |
+| **Doctor** | `doctor@careflow.ai` | Create/view patients, upload documents, trigger AI analysis, order tasks |
+| **Nurse** | `nurse@careflow.ai` | View assigned patients, execute bedside task queue (`Start` / `Complete`), check timeline |
+| **Admin** | `admin@careflow.ai` | System-wide statistics, audit logs, configuration |
+| **Coordinator** | `coordinator@careflow.ai` | Cross-department coordination and follow-up tracking |
 
 ---
 
-## 📖 Swagger / OpenAPI
+## 🩺 Endpoints Reference
 
-Swagger UI is available at:  
-**http://localhost:8080/swagger-ui.html**
-
-API JSON spec:  
-**http://localhost:8080/api-docs**
-
----
-
-## 🏥 Demo Patients
-
-| Patient Code | Name | Age | Doctor | Status |
-|---|---|---|---|---|
-| P-1001 | **Ravi Kumar** (Hero Demo) | 35 | Dr. Rao | Active |
-| P-1002 | Sarah Williams | 42 | Dr. Rao | Active |
-| P-1003 | Robert Brown | 58 | Dr. Patel | Active |
-| P-1004 | Anita Sharma | 29 | Dr. Rao | Active |
-| P-1005 | David Johnson | 64 | Dr. Patel | Discharged |
+- **Public Health Check:** `GET /api/health`
+- **Swagger Documentation:** `GET /swagger-ui/index.html`
+- **OpenAPI Spec:** `GET /api-docs`
+- **Authentication:**
+  - `POST /api/auth/login`
+  - `POST /api/auth/register`
+- **Patients:** `GET /api/patients`, `GET /api/patients/{id}`, `POST /api/patients`, `GET /api/patients/{id}/timeline`
+- **Documents & AI:** `POST /api/documents/upload/{id}`, `POST /api/ai/analyze/{id}`
+- **Tasks:** `GET /api/tasks`, `PUT /api/tasks/{id}/status`, `PUT /api/tasks/{id}/assign`
+- **Follow-ups:** `GET /api/followups`, `PUT /api/followups/{id}/status`
+- **Dashboards:** `GET /api/dashboard/doctor`, `GET /api/dashboard/nurse`, `GET /api/dashboard/admin`
