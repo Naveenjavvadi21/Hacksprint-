@@ -4,18 +4,23 @@ node_modules/
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
 **/.env
-**/.env.local
+**/.env.*
+!.env.example
+!**/.env.example
 
-# Build output
-dist/
-**/dist/
-
-# Java target
+# Java / Maven
 target/
 **/target/
+*.class
+**/*.class
+
+# Node / Build output
+dist/
+**/dist/
+build/
+**/build/
 
 # H2 Database
 *.mv.db
@@ -23,8 +28,28 @@ target/
 careflow-ai/backend/data/
 data/
 
-# Netlify
-.netlify/
+# IDE
+.idea/
+.vscode/
+*.iml
+**/*.iml
 
 # Logs
 *.log
+**/*.log
+logs/
+**/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local secrets/configuration
+application-local.properties
+application-local.yml
+**/application-local.properties
+**/application-local.yml
+
+# Netlify
+.netlify/
+
