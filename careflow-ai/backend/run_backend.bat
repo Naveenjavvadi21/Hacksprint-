@@ -1,10 +1,11 @@
 @echo off
+setlocal enabledelayedexpansion
 cd /d "%~dp0"
 if exist ".env" (
     for /f "usebackq tokens=1* delims==" %%a in (".env") do (
-        set line=%%a
+        set "line=%%a"
         if not "!line:~0,1!"=="#" (
-            set %%a=%%b
+            set "%%a=%%b"
         )
     )
 )

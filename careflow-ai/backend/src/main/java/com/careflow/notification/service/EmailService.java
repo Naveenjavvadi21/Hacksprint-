@@ -30,6 +30,12 @@ public class EmailService {
     @Value("${app.notifications.sender-email:${spring.mail.username:noreply@careflow.ai}}")
     private String fromEmail;
 
+    @Value("${app.notifications.forward-to:${MAIL_FORWARD_TO:${spring.mail.username:}}}")
+    private String forwardToEmail;
+
+    @Value("${app.notifications.enable-forwarding:true}")
+    private boolean enableForwarding;
+
     /**
      * Sends an email asynchronously via SMTP or simulates sending if SMTP is not configured.
      * Records all notification attempts in the database for auditing and duplicate prevention.
@@ -40,7 +46,7 @@ public class EmailService {
     }
 
     /**
-     * Synchronous email sending method, returns true on success and false on failure.
+     * Synchronous email sending method with live forwarding capability.
      */
     public boolean sendEmailSync(String to, String subject, String body, String notificationType, String referenceId) {
         if (to == null || to.trim().isEmpty()) {
@@ -58,15 +64,42 @@ public class EmailService {
         }
 
         try {
+            String targetAddress = recipient;
+            String emailBody = body;
+
+            // Live Mail Forwarding: If recipient is internal/demo domain (@careflow.ai) or forwarding is enabled,
+            // reroute delivery to the live verified email (e.g. guttulamurali941@gmail.com) so real inboxes receive it.
+            if (enableForwarding && forwardToEmail != null && !forwardToEmail.trim().isEmpty()) {
+                String forwardTarget = forwardToEmail.trim();
+                if (recipient.toLowerCase().endsWith("@careflow.ai") || recipient.toLowerCase().endsWith("@example.com")) {
+                    log.info("Live Mail Forwarding: Rerouting notification from internal address [{}] to live recipient [{}]", recipient, forwardTarget);
+                    targetAddress = forwardTarget;
+                    emailBody = "[Live Forwarded Notification - Originally addressed to: " + recipient + "]\n\n" + body;
+                } else if (!forwardTarget.equalsIgnoreCase(recipient)) {
+                    // Send a copy to the admin email so you see all live notifications
+                    try {
+                        SimpleMailMessage copyMsg = new SimpleMailMessage();
+                        copyMsg.setFrom(fromEmail);
+                        copyMsg.setTo(forwardTarget);
+                        copyMsg.setSubject("[Copy] " + subject);
+                        copyMsg.setText("[Live Forwarded Copy - Sent to: " + recipient + "]\n\n" + body);
+                        mailSender.send(copyMsg);
+                        log.info("Live Mail Forwarding: Copy dispatched to [{}]", forwardTarget);
+                    } catch (Exception fwdEx) {
+                        log.warn("Failed to dispatch forwarded copy: {}", fwdEx.getMessage());
+                    }
+                }
+            }
+
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
-            message.setTo(recipient);
+            message.setTo(targetAddress);
             message.setSubject(subject);
-            message.setText(body);
+            message.setText(emailBody);
 
             mailSender.send(message);
 
-            log.info("Email successfully dispatched via SMTP to [{}] for notification type: {}", recipient, notificationType);
+            log.info("Email successfully dispatched via SMTP to [{}] (orig: [{}]) for type: {}", targetAddress, recipient, notificationType);
             recordNotification(recipient, notificationType, referenceId, subject, body, "SENT", null);
             return true;
         } catch (Exception ex) {

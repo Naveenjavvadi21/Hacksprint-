@@ -29,7 +29,7 @@ spring:
 
   # Mail / SMTP Configuration
   mail:
-    host: ${MAIL_HOST:}
+    host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
@@ -39,6 +39,9 @@ spring:
           auth: true
           starttls:
             enable: true
+          connectiontimeout: 8000
+          timeout: 8000
+          writetimeout: 8000
 
 careflow:
   cors:
@@ -63,6 +66,8 @@ springdoc:
 app:
   notifications:
     sender-email: ${MAIL_FROM:noreply@careflow.ai}
+    forward-to: ${MAIL_FORWARD_TO:${spring.mail.username:}}
+    enable-forwarding: ${MAIL_ENABLE_FORWARDING:true}
     portal-url: ${PORTAL_URL:http://localhost:5173}
     follow-up-reminder-days: ${FOLLOW_UP_REMINDER_DAYS:1}
     follow-up-check-interval-ms: ${FOLLOW_UP_CHECK_INTERVAL_MS:3600000}

@@ -6,7 +6,10 @@ if (Test-Path $envFile) {
         if ($line -and -not ($line.StartsWith("#"))) {
             $parts = $line.Split("=", 2)
             if ($parts.Length -eq 2) {
-                [System.Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim())
+                $varName = $parts[0].Trim()
+                $varVal = $parts[1].Trim()
+                [System.Environment]::SetEnvironmentVariable($varName, $varVal, "Process")
+                Set-Item -Path "env:$varName" -Value $varVal
             }
         }
     }
