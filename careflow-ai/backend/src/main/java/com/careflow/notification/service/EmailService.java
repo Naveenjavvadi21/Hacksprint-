@@ -31,14 +31,21 @@ public class EmailService {
     private String fromEmail;
 
     /**
-     * Sends an email via SMTP or simulates sending if SMTP is not configured.
+     * Sends an email asynchronously via SMTP or simulates sending if SMTP is not configured.
      * Records all notification attempts in the database for auditing and duplicate prevention.
      */
     @Async
     public void sendEmail(String to, String subject, String body, String notificationType, String referenceId) {
+        sendEmailSync(to, subject, body, notificationType, referenceId);
+    }
+
+    /**
+     * Synchronous email sending method, returns true on success and false on failure.
+     */
+    public boolean sendEmailSync(String to, String subject, String body, String notificationType, String referenceId) {
         if (to == null || to.trim().isEmpty()) {
             log.warn("Cannot send email: recipient address is empty for type: {}, ref: {}", notificationType, referenceId);
-            return;
+            return false;
         }
 
         String recipient = to.trim();
@@ -47,7 +54,7 @@ public class EmailService {
         if (mailSender == null || mailHost == null || mailHost.trim().isEmpty()) {
             log.info("SMTP host not configured. Simulated email notification to [{}], Subject: [{}]", recipient, subject);
             recordNotification(recipient, notificationType, referenceId, subject, body, "SENT", "Simulated delivery (SMTP host not configured)");
-            return;
+            return true;
         }
 
         try {
@@ -61,9 +68,11 @@ public class EmailService {
 
             log.info("Email successfully dispatched via SMTP to [{}] for notification type: {}", recipient, notificationType);
             recordNotification(recipient, notificationType, referenceId, subject, body, "SENT", null);
+            return true;
         } catch (Exception ex) {
             log.error("Failed to send email to [{}] for notification type [{}]: {}", recipient, notificationType, ex.getMessage());
             recordNotification(recipient, notificationType, referenceId, subject, body, "FAILED", ex.getMessage());
+            return false;
         }
     }
 

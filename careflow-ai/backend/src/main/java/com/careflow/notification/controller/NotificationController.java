@@ -22,6 +22,25 @@ public class NotificationController {
     @Autowired
     private NotificationLogRepository notificationLogRepository;
 
+    @Autowired
+    private com.careflow.notification.service.EmailService emailService;
+
+    @PostMapping("/test-email")
+    public ResponseEntity<Map<String, Object>> sendTestEmail(@RequestBody(required = false) Map<String, String> body) {
+        String to = (body != null && body.containsKey("to")) ? body.get("to") : "guttulamurali941@gmail.com";
+        String subject = (body != null && body.containsKey("subject")) ? body.get("subject") : "SMTP Test - Healthcare Portal";
+        String content = (body != null && body.containsKey("body")) ? body.get("body") : "SMTP email configuration is working successfully.";
+
+        boolean success = emailService.sendEmailSync(to, subject, content, "SMTP_TEST", "test:" + System.currentTimeMillis());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", success ? "SUCCESS" : "FAILED");
+        response.put("recipient", to);
+        response.put("subject", subject);
+        response.put("message", success ? "Email sent successfully via Gmail SMTP!" : "Failed to send email. Check logs for details.");
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/followups/trigger")
     public ResponseEntity<Map<String, Object>> triggerFollowUpCheck() {
         int dispatched = followUpReminderScheduler.runFollowUpReminderCheck();
